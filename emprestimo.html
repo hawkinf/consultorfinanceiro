@@ -181,7 +181,7 @@
 
     <a href="index.html" class="btn-back"><i class="fas fa-home"></i> Menu Principal</a>
 
-    <h1>💠 Simulador Financeiro v2.5</h1>
+    <h1>💠 Simulador Empréstimo</h1>
     <h2>Comparação clara e direta</h2>
 
     <div class="controls">
@@ -202,11 +202,11 @@
             <input type="text" id="taxaPoupanca" value="0,00" oninput="fmtPercent(this)">
         </div>
         <div class="control-group">
-            <label>Investimento (%)</label>
+            <label>Empréstimo (%)</label>
             <input type="text" id="taxaInvestimento" value="0,00" oninput="fmtPercent(this)">
         </div>
         <div class="control-group">
-            <label>Cálculo Investimento</label>
+            <label>Cálculo Empréstimo</label>
             <select id="metodoInvestimento">
                 <option value="SAC">SAC</option>
                 <option value="PRICE">Price</option>
@@ -227,7 +227,7 @@
             <p id="lblPlanJuros">Juros: R$ 0,00</p>
         </div>
         <div id="cardInvest" class="result-card card-red">
-            <h3>INVESTIMENTO</h3>
+            <h3>EMPRÉSTIMO</h3>
             <p id="lblInvTotal">Total Pago: R$ 0,00</p>
             <p id="lblInvJuros">Juros: R$ 0,00</p>
             <p id="lblDiff" style="font-weight: bold; margin-top:10px;">➡ +0.00%</p>
@@ -247,7 +247,7 @@
             </div>
         </div>
         <div class="table-container">
-            <div class="table-header" id="headerInv">INVESTIMENTO (SAC)</div>
+            <div class="table-header" id="headerInv">EMPRÉSTIMO (SAC)</div>
             <div class="table-scroll">
                 <table id="tableInv">
                     <thead>
@@ -551,7 +551,7 @@
 
             // ALTERADO: Título Dinâmico
             document.getElementById('headerPlan').innerText = `${nomePlanoAtual} (SAC)`;
-            document.getElementById('headerInv').innerText = `INVESTIMENTO (${metodoInv})`;
+            document.getElementById('headerInv').innerText = `EMPRÉSTIMO (${metodoInv})`;
 
             updateCards(dadosPlan, dadosInv);
         }
@@ -610,7 +610,7 @@
             }));
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fmt(dadosPlan)), nomePlanoAtual.replace(" ","_"));
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fmt(dadosInv)), "Investimento");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fmt(dadosInv)), "Emprestimo");
             XLSX.writeFile(wb, "Simulacao_Hawk_v2.5.xlsx");
         }
 
