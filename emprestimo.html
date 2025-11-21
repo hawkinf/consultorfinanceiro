@@ -6,22 +6,31 @@
     <title>Simulador Empréstimo</title>
 
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#1F242B">
+    <meta name="theme-color" content="#0056b3">
 
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* =========================================
+           TEMA CLARO (LIGHT MODE)
+           ========================================= */
         :root {
-            --bg-color: #1F242B;
-            --card-bg: #232A33;
-            --text-color: #E7EDF6;
-            --accent-blue: #3BA7FF;
-            --accent-hover: #2C8BE0;
-            --border-color: #2A313B;
-            --green-bg: #204020;
-            --green-border: #81C784;
-            --red-bg: #402020;
-            --red-border: #E57373;
+            --bg-color: #F0F2F5;
+            --card-bg: #FFFFFF;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --accent-blue: #0056b3;
+            --accent-hover: #004494;
+            --border-color: #CCCCCC;
+            
+            /* Cores de Status (Versão Clara) */
+            --green-bg: #E8F5E9;
+            --green-border: #4CAF50;
+            --red-bg: #FFEBEE;
+            --red-border: #EF5350;
+            
+            --input-bg: #FFFFFF;
+            --header-bg: #E9ECEF;
         }
 
         body {
@@ -39,7 +48,7 @@
         .btn-back {
             align-self: flex-start;
             text-decoration: none;
-            color: #888;
+            color: var(--text-muted);
             font-size: 0.9rem;
             margin-bottom: 10px;
             display: flex;
@@ -49,8 +58,8 @@
         }
         .btn-back:hover { color: var(--accent-blue); }
 
-        h1 { margin-bottom: 5px; font-size: 1.8rem; text-align: center; }
-        h2 { margin-top: 0; font-size: 1rem; font-weight: normal; color: #ccc; margin-bottom: 20px; text-align: center; }
+        h1 { margin-bottom: 5px; font-size: 1.8rem; text-align: center; color: #2c3e50; }
+        h2 { margin-top: 0; font-size: 1rem; font-weight: normal; color: var(--text-muted); margin-bottom: 20px; text-align: center; }
 
         /* Layout de Controles */
         .controls {
@@ -58,6 +67,7 @@
             padding: 20px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 15px;
@@ -67,17 +77,17 @@
         }
 
         .control-group { display: flex; flex-direction: column; }
-        label { font-size: 0.85rem; margin-bottom: 5px; color: #ccc; font-weight: 600; }
+        label { font-size: 0.85rem; margin-bottom: 5px; color: var(--text-muted); font-weight: 700; }
         
         input, select {
-            background-color: var(--bg-color);
+            background-color: var(--input-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
             padding: 8px;
             border-radius: 4px;
             font-size: 1rem;
         }
-        input:focus, select:focus { outline: 2px solid var(--accent-blue); }
+        input:focus, select:focus { outline: 2px solid var(--accent-blue); border-color: var(--accent-blue); }
 
         /* Botões */
         .actions { margin-top: 20px; display: flex; gap: 10px; justify-content: center; width: 100%; }
@@ -91,10 +101,11 @@
             font-weight: bold;
             font-size: 0.9rem;
             transition: background 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         button:hover { background-color: var(--accent-hover); }
-        button.secondary { background-color: var(--border-color); }
-        button.secondary:hover { background-color: #3e4652; }
+        button.secondary { background-color: #E0E0E0; color: #333; }
+        button.secondary:hover { background-color: #D6D6D6; }
 
         /* Cards de Resultado */
         .cards-container {
@@ -102,7 +113,7 @@
             gap: 20px;
             width: 100%;
             max-width: 1200px;
-            margin-top: 20px; /* Espaço entre tabela e card */
+            margin-top: 20px;
         }
         .result-card {
             flex: 1;
@@ -110,11 +121,13 @@
             border-radius: 6px;
             text-align: center;
             border: 1px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .card-green { background-color: var(--green-bg); border-color: var(--green-border); }
-        .card-red { background-color: var(--red-bg); border-color: var(--red-border); }
-        .result-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
-        .result-card p { margin: 5px 0; font-size: 0.95rem; }
+        .card-green { background-color: var(--green-bg); border-color: var(--green-border); color: #1B5E20; }
+        .card-red { background-color: var(--red-bg); border-color: var(--red-border); color: #B71C1C; }
+        
+        .result-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; opacity: 0.8; }
+        .result-card p { margin: 5px 0; font-size: 1.1rem; font-weight: bold; }
 
         /* Tabelas */
         .tables-wrapper {
@@ -133,38 +146,43 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .table-header {
-            background-color: var(--border-color);
+            background-color: var(--header-bg);
             padding: 10px;
             font-weight: bold;
             text-align: center;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
         }
         .table-scroll { overflow-y: auto; flex: 1; }
         
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         
-        /* Ajuste de Alinhamento dos Títulos */
         th { 
             position: sticky; 
             top: 0; 
-            background-color: var(--border-color); 
+            background-color: #F8F9FA; 
             z-index: 1; 
-            text-align: center; /* Centraliza Titulos */
-            padding: 8px;
-            border-bottom: 1px solid #333;
+            text-align: center;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+            color: #555;
         }
         
         td { 
             padding: 8px; 
-            text-align: right; /* Mantém valores à direita */
-            border-bottom: 1px solid #333; 
+            text-align: right; 
+            border-bottom: 1px solid #eee; 
+            color: #444;
         }
         
-        td:first-child { text-align: center; } /* Parcela centralizada */
-        td:nth-child(2) { text-align: center; } /* Data centralizada */
+        td:first-child { text-align: center; }
+        td:nth-child(2) { text-align: center; }
         
-        tr:nth-child(even) { background-color: rgba(255,255,255,0.03); }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
 
         /* Modal */
         .modal {
@@ -174,7 +192,7 @@
             align-items: center; justify-content: center;
         }
         .modal-content {
-            background-color: var(--bg-color);
+            background-color: var(--card-bg);
             padding: 20px;
             border: 1px solid var(--border-color);
             width: 600px;
@@ -182,15 +200,16 @@
             max-height: 90vh;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         .modal-body { overflow-y: auto; margin-bottom: 10px; flex: 1; min-height: 200px; }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close:hover { color: white; }
+        .close:hover { color: #333; }
 
         /* Rodapé */
         footer {
             margin-top: 40px;
-            color: #666;
+            color: var(--text-muted);
             font-size: 0.8rem;
             text-align: center;
             width: 100%;
@@ -275,10 +294,10 @@
     <div id="modalIndices" class="modal">
         <div class="modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3>Consulta Índices (BCB)</h3>
+                <h3 style="margin:0; color:var(--text-color);">Consulta Índices (BCB)</h3>
                 <span class="close" onclick="fecharIndices()">&times;</span>
             </div>
-            <p style="font-size:0.85rem; color:#aaa; margin-top:-5px;">Apenas para consulta histórica</p>
+            <p style="font-size:0.85rem; color:#666; margin-top:5px;">Apenas para consulta histórica</p>
             
             <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
                 <div class="control-group">
@@ -319,11 +338,11 @@
                 </table>
             </div>
 
-            <div style="background:#2A313B; padding:10px; border-radius:4px; font-size:0.9rem; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-                <div id="idxMedia" style="color: #FF5555; font-weight: bold; font-size: 1.1rem; border: 1px solid #FF5555; border-radius: 4px; padding: 2px 5px; text-align:center;">Média: 0.0000%</div>
-                <div id="idxAcum" style="padding-top: 4px;">Acumulado: 0.0000%</div>
-                <div id="idxMaior">Maior: 0.0000%</div>
-                <div id="idxMenor">Menor: 0.0000%</div>
+            <div style="background:#F8F9FA; padding:15px; border-radius:4px; border:1px solid #ddd; font-size:0.9rem; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div id="idxMedia" style="color: #D32F2F; font-weight: bold; font-size: 1.2rem; border: 2px solid #EF5350; border-radius: 6px; padding: 5px; text-align:center; background:#FFF;">Média: 0.0000%</div>
+                <div id="idxAcum" style="padding-top: 8px; font-weight:600;">Acumulado: 0.0000%</div>
+                <div id="idxMaior" style="color:#555;">Maior: 0.0000%</div>
+                <div id="idxMenor" style="color:#555;">Menor: 0.0000%</div>
             </div>
         </div>
     </div>
