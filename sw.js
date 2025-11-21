@@ -1,4 +1,4 @@
-const CACHE_NAME = 'consultor-financeiro-v1';
+const CACHE_NAME = 'consultor-financeiro-v2'; // Mudei para v2 para forçar atualização
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const ASSETS_TO_CACHE = [
 
 // Instalação do Service Worker
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Força o novo SW a assumir imediatamente
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -27,12 +28,14 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
+            console.log('Apagando cache antigo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  return self.clients.claim(); // Controla a página imediatamente
 });
 
 // Interceptação de requisições (Offline First)
@@ -40,7 +43,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Retorna do cache se existir, senão busca na rede
         return response || fetch(event.request);
       })
   );
