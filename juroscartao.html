@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Financeiro - v1.12</title>
+    <link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#2563EB">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('App registrado!', reg))
+        .catch(err => console.log('Erro ao registrar:', err));
+    });
+  }
+</script>
+    <style>
+        /* =========================================
+           CSS - ESTILO VISUAL
+           ========================================= */
+        :root {
+            --bg-color: #F7F9FC;
+            --card-bg: #FFFFFF;
+            --text-color: #212121;
+            --subtle-text: #555555;
+            --accent-color: #2563EB;
+            --accent-hover: #1D4ED8;
+            --accent-text: #FFFFFF;
+            --border-color: #E0E0E0;
+            --result-color: #166534;
+            --danger-color: #D32F2F;
+            --input-bg: #FFFFFF;
+            --readonly-bg: #F0F0F0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1F242B;
+                --card-bg: #232A33;
+                --text-color: #E7EDF6;
+                --subtle-text: #A0A0A0;
+                --accent-color: #3B82F6;
+                --accent-hover: #60A5FA;
+                --border-color: #444444;
+                --result-color: #4ADE80; 
+                --danger-color: #F87171;
+                --input-bg: #2A313B;
+                --readonly-bg: #353B45;
+            }
+        }
+
+        body {
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 550px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        h1 { text-align: center; font-size: 1.2rem; margin: 0 0 5px 0; font-weight: 700; }
+        p.subtitle { text-align: center; color: var(--subtle-text); margin: 0 0 25px 0; font-size: 0.9rem; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 15px 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        label { text-align: right; font-size: 0.95rem; color: var(--subtle-text); }
+        label.bold { color: var(--text-color); font-weight: 700; }
+
+        input, select {
+            width: 100%; padding: 6px 8px; border: 1px solid var(--border-color);
+            border-radius: 2px; background-color: var(--input-bg); color: var(--text-color);
+            font-size: 1rem; box-sizing: border-box; text-align: right; 
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        input:focus, select:focus { outline: 1px solid var(--accent-color); border-color: var(--accent-color); }
+        input[readonly] { background-color: var(--readonly-bg); color: var(--subtle-text); border-color: var(--border-color); font-weight: 600; pointer-events: none; }
+
+        .input-group { display: flex; gap: 5px; }
+        .input-group select { width: 45%; text-align: left; }
+        .input-group input { width: 55%; }
+
+        .separator { grid-column: 1 / -1; height: 1px; background-color: var(--border-color); margin: 5px 0; }
+
+        .result-area { text-align: center; margin-top: 20px; margin-bottom: 20px; }
+        .result-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 5px; }
+        .result-value { font-size: 1.8rem; font-weight: 700; color: var(--result-color); }
+        .result-sub { font-size: 0.9rem; color: var(--subtle-text); }
+
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        
+        .btn {
+            width: 100%; padding: 10px; border: none; border-radius: 4px; font-size: 1rem;
+            font-weight: 700; cursor: pointer; transition: background 0.2s; font-family: "Segoe UI", sans-serif;
+        }
+        .btn-accent { background-color: var(--accent-color); color: var(--accent-text); }
+        .btn-accent:hover { background-color: var(--accent-hover); }
+        .btn-default { background-color: var(--readonly-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+        .btn-default:hover { background-color: #e0e0e0; }
+
+        /* Comparação */
+        .comp-container { margin-top: 15px; text-align: center; }
+        .comp-title { font-weight: 700; font-size: 1rem; margin-bottom: 5px; display: block; }
+        .comp-status { font-size: 0.85rem; color: var(--subtle-text); font-style: italic; min-height: 1.2em; margin-bottom: 10px; }
+        
+        .comp-list { background-color: var(--card-bg); border: 1px solid var(--border-color); padding: 10px; }
+        .comp-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+        .comp-label { font-size: 0.95rem; color: var(--subtle-text); }
+        .comp-val { font-size: 1.1rem; font-weight: 700; color: var(--text-color); }
+        .comp-val.red { color: var(--danger-color); }
+
+        /* MODAL */
+        .modal {
+            display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: var(--card-bg); padding: 20px; border-radius: 8px; width: 90%; max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        }
+        .modal-grid { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .scroll-table { max-height: 200px; overflow-y: auto; margin: 15px 0; border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { position: sticky; top: 0; background: var(--readonly-bg); text-align: center; padding: 8px; font-weight: bold;}
+        td { border-bottom: 1px solid var(--border-color); padding: 6px; text-align: center; }
+        tr:nth-child(even) { background-color: var(--bg-color); }
+
+        .modal-footer div { margin: 5px 0; }
+        .modal-lbl { font-weight: 700; font-size: 1rem; }
+        .modal-lbl-sub { font-size: 0.9rem; color: var(--subtle-text); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💠 Simulador Financeiro</h1>
+    <p class="subtitle">Comparação clara e direta (v1.12)</p>
+
+    <div class="form-grid">
+        
+        <label for="compra">Valor da compra:</label>
+        <input type="tel" id="compra" value="R$ 0,00" oninput="maskCurrency(this)">
+
+        <label>Desconto pagto pix:</label>
+        <div class="input-group">
+            <select id="tipo_desconto" onchange="changeDiscountType()">
+                <option value="%">%</option>
+                <option value="R$ Desconto">R$ Desconto</option>
+                <option value="Valor Final">Valor Final</option>
+            </select>
+            <input type="tel" id="val_desconto" value="0,0" oninput="maskDiscount(this)">
+        </div>
+
+        <label class="bold">Valor pix (a vista):</label>
+        <input type="text" id="res_pix" value="R$ 0,00" readonly>
+
+        <div class="separator"></div>
+
+        <label>Qtd parcelas sem juros:</label>
+        <input type="tel" id="parcelas" value="1" style="text-align: center;" oninput="maskInteger(this)">
+
+        <label class="bold">Valor da parcela:</label>
+        <input type="text" id="res_parcela" value="R$ 0,00" readonly>
+
+    </div>
+
+    <div class="result-area">
+        <div class="result-title">Taxa de Juros Mensal Aplicada:</div>
+        <div id="txt_taxa_mensal" class="result-value">0,0000 %</div>
+        <div id="txt_taxa_anual" class="result-sub">(Anual: 0,00 %)</div>
+    </div>
+
+    <div class="btn-row">
+        <button class="btn btn-default" onclick="limparCampos()">Limpar Campos</button>
+        <button class="btn btn-accent" onclick="compararMercado()">Comparar com Mercado</button>
+    </div>
+    
+    <button class="btn btn-default" style="margin-top: 5px; border:none; background:transparent; color:var(--accent-color); text-decoration:underline;" onclick="abrirModalIndices()">
+        💰 Consultar Histórico de Índices
+    </button>
+
+    <div class="comp-container">
+        <span class="comp-title">Comparativo de Taxas Médias:</span>
+        <div id="status_comp" class="comp-status"></div>
+        
+        <div id="box_comparacao" style="display:none;">
+            <div class="comp-list" id="lista_comparacao"></div>
+        </div>
+    </div>
+
+</div>
+
+<div id="modalIndices" class="modal">
+    <div class="modal-content">
+        <h2 style="text-align:center; margin-top:0;">Consulta Índices ONLINE</h2>
+        <p style="text-align:center; font-size:0.85rem; color:var(--subtle-text);">Consultas feitas diretamente no site do Banco Central</p>
+
+        <div class="modal-grid">
+            <label style="text-align:right;">Índice:</label>
+            <select id="m_indice">
+                <option value="196">Poupança (Mensal)</option>
+                <option value="4391">CDI (Mensal)</option>
+                <option value="4390">SELIC (Mensal)</option>
+                <option value="25463">Cheque Especial (PF)</option>
+                <option value="433">IPCA (Inflação)</option>
+                <option value="189">IGP-M (Inflação)</option>
+            </select>
+
+            <label style="text-align:right;">Meses atrás:</label>
+            <input type="tel" id="m_meses" value="12" style="text-align:center;">
+        </div>
+
+        <button class="btn btn-accent" onclick="buscarHistorico()">Buscar</button>
+
+        <div class="scroll-table">
+            <table id="tabela_indices">
+                <thead><tr><th>Período</th><th>Valor (%)</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="modal-footer" style="text-align: center;">
+            <div id="m_res_media" class="modal-lbl">Indice medio mensal: 0,0000%</div>
+            <div id="m_res_acumu" class="modal-lbl-sub">Acumulado no período: 0,00%</div>
+            <div id="m_res_max" class="modal-lbl-sub">Maior: -</div>
+            <div id="m_res_min" class="modal-lbl-sub">Menor: -</div>
+            
+            <button class="btn btn-default" style="margin-top: 15px;" onclick="fecharModalIndices()">Voltar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let taxaAtualUsuario = 0.0;
+
+    function parseMoney(val) {
+        if(!val) return 0.0;
+        let clean = val.replace(/\D/g, '');
+        return parseFloat(clean) / 100;
+    }
+    function formatMoney(val) {
+        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+    function formatDate(date) {
+        let d = date.getDate().toString().padStart(2, '0');
+        let m = (date.getMonth()+1).toString().padStart(2, '0');
+        let y = date.getFullYear();
+        return `${d}/${m}/${y}`;
+    }
+    function getMonthName(idx) {
+        const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+        return meses[idx];
+    }
+
+    function maskCurrency(el) {
+        let val = el.value.replace(/\D/g, '');
+        if(val === '') val = '0';
+        let num = parseInt(val) / 100;
+        el.value = num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        calcular();
+    }
+    function maskInteger(el) {
+        el.value = el.value.replace(/\D/g, '');
+        calcular();
+    }
+    function maskDiscount(el) {
+        let tipo = document.getElementById('tipo_desconto').value;
+        let val = el.value.replace(/\D/g, '');
+        if(val === '') val = '0';
+        let num = parseInt(val);
+        if(tipo === '%') {
+            el.value = (num / 10).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        } else {
+            el.value = (num / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        calcular();
+    }
+    function changeDiscountType() {
+        let el = document.getElementById('val_desconto');
+        let tipo = document.getElementById('tipo_desconto').value;
+        el.value = (tipo === '%') ? "0,0" : "0,00";
+        calcular();
+    }
+
+    function calcularRate(nper, pmt, pv) {
+        if(nper <= 0 || pv <= 0 || pmt >= 0) return null; 
+        let rate = 0.01; 
+        let maxIter = 100;
+        let tol = 1e-6;
+        for(let k=0; k<maxIter; k++) {
+            let y, df, pow = Math.pow(1+rate, nper);
+            if (Math.abs(rate) < 1e-8) {
+                y = pv + pmt*nper;
+                df = pv*nper + pmt*nper*(nper-1)/2;
+            } else {
+                y = pv * pow + pmt * ((pow - 1) / rate);
+                let pow_n1 = Math.pow(1+rate, nper-1);
+                let term1 = pv * nper * pow_n1;
+                let term2 = pmt * ((rate * nper * pow_n1 - (pow - 1)) / (rate*rate));
+                df = term1 + term2;
+            }
+            if(Math.abs(df) < 1e-10) break;
+            let newRate = rate - y/df;
+            if(Math.abs(newRate - rate) < tol) return newRate;
+            rate = newRate;
+        }
+        return null;
+    }
+
+    function calcular() {
+        let compra = parseMoney(document.getElementById('compra').value);
+        let tipoDesc = document.getElementById('tipo_desconto').value;
+        let descStr = document.getElementById('val_desconto').value.replace(/\./g, '').replace(',', '.'); 
+        let descVal = parseFloat(descStr);
+        if(isNaN(descVal)) descVal = 0;
+
+        let valorPix = 0;
+        if(tipoDesc === '%') {
+            valorPix = compra * (1 - (descVal / 100));
+        } else if (tipoDesc === 'R$ Desconto') {
+            valorPix = compra - descVal;
+        } else {
+            valorPix = descVal; 
+        }
+        if(valorPix < 0) valorPix = 0;
+        document.getElementById('res_pix').value = formatMoney(valorPix);
+
+        let qtd = parseInt(document.getElementById('parcelas').value) || 1;
+        let parcela = (qtd > 0) ? (compra / qtd) : 0;
+        document.getElementById('res_parcela').value = formatMoney(parcela);
+
+        let elTaxa = document.getElementById('txt_taxa_mensal');
+        let elAnual = document.getElementById('txt_taxa_anual');
+
+        if (valorPix <= 0 || parcela <= 0 || qtd <= 0) {
+            elTaxa.innerText = "0,0000 %";
+            elAnual.innerText = "(Anual: 0,00 %)";
+            taxaAtualUsuario = 0;
+            return;
+        }
+
+        let taxa = calcularRate(qtd, -parcela, valorPix);
+        if (taxa === null || isNaN(taxa)) {
+            elTaxa.innerText = "Erro";
+            elTaxa.style.color = "var(--danger-color)";
+            taxaAtualUsuario = 0;
+        } else {
+            let mensalPct = taxa * 100;
+            let anualPct = (Math.pow(1+taxa, 12) - 1) * 100;
+            taxaAtualUsuario = mensalPct;
+            elTaxa.innerText = mensalPct.toFixed(4).replace('.', ',') + " %";
+            elTaxa.style.color = "var(--result-color)";
+            elAnual.innerText = "(Anual: " + anualPct.toFixed(2).replace('.', ',') + " %)";
+        }
+    }
+
+    function limparCampos() {
+        document.getElementById('compra').value = "R$ 0,00";
+        document.getElementById('tipo_desconto').value = "%";
+        document.getElementById('val_desconto').value = "0,0";
+        document.getElementById('parcelas').value = "1";
+        document.getElementById('res_pix').value = "R$ 0,00";
+        document.getElementById('res_parcela').value = "R$ 0,00";
+        document.getElementById('txt_taxa_mensal').innerText = "0,0000 %";
+        document.getElementById('txt_taxa_anual').innerText = "(Anual: 0,00 %)";
+        document.getElementById('status_comp').innerText = "";
+        document.getElementById('box_comparacao').style.display = "none";
+        document.getElementById('lista_comparacao').innerHTML = "";
+        taxaAtualUsuario = 0;
+    }
+
+    async function compararMercado() {
+        let qtd = parseInt(document.getElementById('parcelas').value);
+        let status = document.getElementById('status_comp');
+        let box = document.getElementById('box_comparacao');
+        let lista = document.getElementById('lista_comparacao');
+        
+        if(!qtd || qtd < 1) { alert("Quantidade de parcelas inválida."); return; }
+        let txtTaxa = document.getElementById('txt_taxa_mensal').innerText;
+        if(txtTaxa.includes("Erro") || txtTaxa.includes("0,0000")) { alert("Calcule uma taxa válida primeiro."); return; }
+
+        box.style.display = 'block';
+        lista.innerHTML = '';
+        status.innerText = "Buscando dados...";
+
+        let hoje = new Date();
+        let dataFim = formatDate(hoje);
+        let dtIni = new Date();
+        dtIni.setDate(dtIni.getDate() - (qtd * 32)); 
+        let dataIni = formatDate(dtIni);
+
+        let indicadores = [
+            {nome: "Poupança", codigo: 196},
+            {nome: "SELIC", codigo: 4390},
+            {nome: "CDI", codigo: 4391},
+            {nome: "Cheque Especial", codigo: 25463}
+        ];
+
+        let htmlRows = `<div class="comp-row" style="border-bottom:2px solid var(--border-color); margin-bottom:5px;">
+                        <span style="font-weight:bold; font-size:0.9rem;">Índice</span>
+                        <span style="font-weight:bold; font-size:0.9rem;">Média Mensal</span>
+                     </div>`;
+
+        for (let item of indicadores) {
+            let url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${item.codigo}/dados?formato=json&dataInicial=${dataIni}&dataFinal=${dataFim}`;
+            try {
+                let res = await fetch(url);
+                let dados = await res.json();
+                let ultimos = dados.slice(-qtd);
+                let valText = "S/ Dados";
+                let styleClass = "";
+                
+                if (ultimos.length > 0) {
+                    let soma = 0;
+                    ultimos.forEach(d => soma += parseFloat(d.valor));
+                    let media = soma / ultimos.length;
+                    valText = media.toFixed(4).replace('.', ',') + "%";
+                    if (media > taxaAtualUsuario) styleClass = "red";
+                }
+                htmlRows += `<div class="comp-row"><span class="comp-label">${item.nome}</span><span class="comp-val ${styleClass}">${valText}</span></div>`;
+            } catch (err) {
+                htmlRows += `<div class="comp-row"><span class="comp-label">${item.nome}</span><span>Erro</span></div>`;
+            }
+        }
+        status.innerText = `Média dos últimos ${qtd} meses:`;
+        lista.innerHTML = htmlRows;
+    }
+
+    // MODAL
+    function abrirModalIndices() { document.getElementById('modalIndices').style.display = 'flex'; }
+    function fecharModalIndices() { document.getElementById('modalIndices').style.display = 'none'; }
+
+    async function buscarHistorico() {
+        let codigo = document.getElementById('m_indice').value;
+        let meses = parseInt(document.getElementById('m_meses').value) || 12;
+        let hoje = new Date();
+        let dataFim = formatDate(hoje);
+        let dtIni = new Date();
+        dtIni.setDate(dtIni.getDate() - (meses * 35)); 
+        let dataIni = formatDate(dtIni);
+        let url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${codigo}/dados?formato=json&dataInicial=${dataIni}&dataFinal=${dataFim}`;
+        let tbody = document.querySelector('#tabela_indices tbody');
+        tbody.innerHTML = "<tr><td colspan='2'>Carregando...</td></tr>";
+
+        try {
+            let res = await fetch(url);
+            let dados = await res.json();
+            let ultimos = dados.slice(-meses).reverse();
+            tbody.innerHTML = "";
+            let soma = 0;
+            let maxVal = -9999, minVal = 9999;
+            let maxDt = "", minDt = "";
+            let acumulado = 1.0;
+
+            ultimos.forEach(d => {
+                let val = parseFloat(d.valor);
+                soma += val;
+                acumulado *= (1 + val/100);
+                if(val > maxVal) { maxVal = val; maxDt = d.data; }
+                if(val < minVal) { minVal = val; minDt = d.data; }
+                
+                let parts = d.data.split('/'); 
+                let dtObj = new Date(parts[2], parts[1]-1, parts[0]);
+                let periodoStr = `${getMonthName(dtObj.getMonth())}/${dtObj.getFullYear()}`;
+                tbody.innerHTML += `<tr><td>${periodoStr}</td><td>${val.toFixed(4).replace('.',',')}%</td></tr>`;
+            });
+
+            let media = soma / ultimos.length;
+            document.getElementById('m_res_media').innerText = `Indice medio mensal: ${media.toFixed(4).replace('.',',')}%`;
+            document.getElementById('m_res_acumu').innerText = `Acumulado no período: ${((acumulado-1)*100).toFixed(4).replace('.',',')}%`;
+            document.getElementById('m_res_max').innerText = `Maior: ${maxVal.toFixed(4).replace('.',',')}%`;
+            document.getElementById('m_res_min').innerText = `Menor: ${minVal.toFixed(4).replace('.',',')}%`;
+
+        } catch (e) { tbody.innerHTML = "<tr><td colspan='2'>Erro na busca</td></tr>"; }
+    }
+</script>
+</body>
+
+</html>
+

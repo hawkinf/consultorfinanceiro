@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Financeiro - Hawk v2.5</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #1F242B;
+            --card-bg: #232A33;
+            --text-color: #E7EDF6;
+            --accent-blue: #3BA7FF;
+            --accent-hover: #2C8BE0;
+            --border-color: #2A313B;
+            --green-bg: #204020;
+            --green-border: #81C784;
+            --red-bg: #402020;
+            --red-border: #E57373;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { margin-bottom: 5px; font-size: 1.8rem; }
+        h2 { margin-top: 0; font-size: 1rem; font-weight: normal; color: #ccc; margin-bottom: 20px; }
+
+        /* Layout de Controles */
+        .controls {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+            box-sizing: border-box;
+        }
+
+        .control-group { display: flex; flex-direction: column; }
+        label { font-size: 0.85rem; margin-bottom: 5px; color: #ccc; font-weight: 600; }
+        
+        input, select {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        input:focus, select:focus { outline: 2px solid var(--accent-blue); }
+
+        /* Botões */
+        .actions { margin-top: 20px; display: flex; gap: 10px; }
+        button {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: var(--accent-hover); }
+        button.secondary { background-color: var(--border-color); }
+        button.secondary:hover { background-color: #3e4652; }
+
+        /* Cards de Resultado */
+        .cards-container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
+        .result-card {
+            flex: 1;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid transparent;
+        }
+        .card-green { background-color: var(--green-bg); border-color: var(--green-border); }
+        .card-red { background-color: var(--red-bg); border-color: var(--red-border); }
+        .result-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
+        .result-card p { margin: 5px 0; font-size: 0.95rem; }
+
+        /* Tabelas */
+        .tables-wrapper {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+            height: 500px;
+        }
+        .table-container {
+            flex: 1;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .table-header {
+            background-color: var(--border-color);
+            padding: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .table-scroll { overflow-y: auto; flex: 1; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { position: sticky; top: 0; background-color: var(--border-color); z-index: 1; text-align: center; }
+        th, td { padding: 8px; text-align: right; border-bottom: 1px solid #333; }
+        th:first-child, td:first-child { text-align: center; } /* Parcela */
+        td:nth-child(2) { text-align: center; } /* Data */
+        tr:nth-child(even) { background-color: rgba(255,255,255,0.03); }
+
+        /* Modal */
+        .modal {
+            display: none; position: fixed; z-index: 100; 
+            left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.5); 
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: var(--bg-color);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            width: 600px;
+            border-radius: 8px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-body { overflow-y: auto; margin-bottom: 10px; flex: 1; min-height: 200px; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>💠 Simulador Financeiro v2.5</h1>
+    <h2>Comparação clara e direta</h2>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Capital (R$)</label>
+            <input type="text" id="capital" value="R$ 0,00" oninput="fmtCurrency(this)">
+        </div>
+        <div class="control-group">
+            <label>Qtd. Prestações</label>
+            <input type="number" id="qtdPrestacoes" value="1">
+        </div>
+        <div class="control-group">
+            <label>Data 1ª Parcela</label>
+            <input type="text" id="dataPrimeira" placeholder="DD/MM/AAAA" maxlength="10" oninput="fmtDate(this)">
+        </div>
+        <div class="control-group">
+            <label>Índice (%)</label>
+            <input type="text" id="taxaPoupanca" value="0,00" oninput="fmtPercent(this)">
+        </div>
+        <div class="control-group">
+            <label>Investimento (%)</label>
+            <input type="text" id="taxaInvestimento" value="0,00" oninput="fmtPercent(this)">
+        </div>
+        <div class="control-group">
+            <label>Cálculo Investimento</label>
+            <select id="metodoInvestimento">
+                <option value="SAC">SAC</option>
+                <option value="PRICE">Price</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="secondary" onclick="abrirIndices()">💰 Índices</button>
+        <button onclick="gerar()">Gerar</button>
+        <button class="secondary" onclick="exportarExcel()">Exportar</button>
+    </div>
+
+    <div class="cards-container">
+        <div id="cardPlan" class="result-card card-green">
+            <h3>Índice Utilizado: Manual</h3>
+            <p id="lblPlanTotal">Total Pago: R$ 0,00</p>
+            <p id="lblPlanJuros">Juros: R$ 0,00</p>
+        </div>
+        <div id="cardInvest" class="result-card card-red">
+            <h3>INVESTIMENTO</h3>
+            <p id="lblInvTotal">Total Pago: R$ 0,00</p>
+            <p id="lblInvJuros">Juros: R$ 0,00</p>
+            <p id="lblDiff" style="font-weight: bold; margin-top:10px;">➡ +0.00%</p>
+        </div>
+    </div>
+
+    <div class="tables-wrapper">
+        <div class="table-container">
+            <div class="table-header" id="headerPlan">Índice Utilizado: Manual (SAC)</div>
+            <div class="table-scroll">
+                <table id="tablePlan">
+                    <thead>
+                        <tr><th>#</th><th>Data</th><th>Taxa</th><th>Juros</th><th>Amort.</th><th>Valor</th><th>Saldo</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="table-container">
+            <div class="table-header" id="headerInv">INVESTIMENTO (SAC)</div>
+            <div class="table-scroll">
+                <table id="tableInv">
+                    <thead>
+                        <tr><th>#</th><th>Data</th><th>Taxa</th><th>Juros</th><th>Amort.</th><th>Valor</th><th>Saldo</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalIndices" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Consulta Índices (BCB)</h3>
+                <span class="close" onclick="fecharIndices()">&times;</span>
+            </div>
+            <p style="font-size:0.85rem; color:#aaa; margin-top:-5px;">Cálculo: Média de todos os registros do mês</p>
+            
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+                <div class="control-group">
+                    <label>Índice</label>
+                    <select id="selIndice">
+                        <option value="poupanca">Poupança</option>
+                        <option value="cdi">CDI</option>
+                        <option value="tr">TR</option>
+                        <option value="selic">SELIC</option>
+                        <option value="ipca">IPCA</option>
+                        <option value="igpm">IGP-M</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Início (Mês/Ano)</label>
+                    <div style="display:flex; gap:5px;">
+                        <select id="iniMes"></select>
+                        <select id="iniAno"></select>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Fim (Mês/Ano)</label>
+                    <div style="display:flex; gap:5px;">
+                        <select id="fimMes"></select>
+                        <select id="fimAno"></select>
+                    </div>
+                </div>
+                <div class="control-group" style="justify-content: flex-end;">
+                    <button onclick="buscarIndices()">Buscar</button>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <table id="tableIndices">
+                    <thead><tr><th>Mês/Ano</th><th>Média Mensal</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div style="background:#2A313B; padding:10px; border-radius:4px; font-size:0.9rem; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                <div id="idxMedia">Média: 0.0000%</div>
+                <div id="idxAcum">Acumulado: 0.0000%</div>
+                <div id="idxMaior">Maior: 0.0000%</div>
+                <div id="idxMenor">Menor: 0.0000%</div>
+            </div>
+            <button style="margin-top:10px; width:100%;" onclick="aplicarIndice()">Usar Média Mensal</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Estado Global ---
+        let dadosPlan = [];
+        let dadosInv = [];
+        let nomePlanoAtual = "Índice Utilizado: Manual"; // Default
+        let mediaIndiceEncontrada = 0;
+
+        const MESES_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+        // --- Inicialização ---
+        window.onload = function() {
+            let hoje = new Date();
+            let mesQueVem = addMonthsNoOverflow(hoje, 1);
+            document.getElementById('dataPrimeira').value = formatDataBR(mesQueVem);
+            
+            initModalSelects();
+        }
+
+        function initModalSelects() {
+            const fill = (id, opts) => {
+                const el = document.getElementById(id);
+                opts.forEach((o, i) => {
+                    let opt = document.createElement('option');
+                    opt.value = i+1; // 1-based para meses
+                    opt.text = o;
+                    if(id.includes('Ano')) opt.value = o;
+                    el.add(opt);
+                });
+            };
+
+            let anos = [];
+            let curYear = new Date().getFullYear();
+            for(let y = curYear; y >= 2000; y--) anos.push(y);
+
+            fill('iniMes', MESES_PT); fill('fimMes', MESES_PT);
+            fill('iniAno', anos); fill('fimAno', anos);
+
+            // Defaults
+            let now = new Date();
+            document.getElementById('iniMes').value = 1;
+            document.getElementById('iniAno').value = now.getFullYear();
+            document.getElementById('fimMes').value = now.getMonth() + 1;
+            document.getElementById('fimAno').value = now.getFullYear();
+        }
+
+        // --- Date Helpers ---
+        function addMonthsNoOverflow(date, months) {
+            let d = new Date(date);
+            let day = d.getDate();
+            d.setMonth(d.getMonth() + +months);
+            if (d.getDate() != day) d.setDate(0);
+            return d;
+        }
+
+        function formatDataBR(dateObj) {
+            let d = dateObj.getDate().toString().padStart(2, '0');
+            let m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            let y = dateObj.getFullYear();
+            return `${d}/${m}/${y}`;
+        }
+
+        function parseDataBR(str) {
+            if(!str) return null;
+            let parts = str.split('/');
+            if(parts.length !== 3) return null;
+            return new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+
+        function diffDays(d1, d2) {
+            const oneDay = 24 * 60 * 60 * 1000;
+            return Math.round(Math.abs((d1 - d2) / oneDay));
+        }
+
+        // --- Formatting Helpers ---
+        function fmtDate(input) {
+            let v = input.value.replace(/\D/g,"");
+            v = v.substring(0,8);
+            if(v.length > 4) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+            else if(v.length > 2) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
+            input.value = v;
+        }
+
+        function fmtCurrency(input) {
+            let v = input.value.replace(/\D/g, "");
+            v = (Number(v)/100).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+            input.value = v;
+        }
+        function fmtPercent(input) {
+            input.value = input.value.replace(/[^\d,]/g, '');
+        }
+        function parseMoney(str) {
+            return parseFloat(str.replace("R$","").replace(/\./g,"").replace(",",".").trim()) || 0;
+        }
+        function parsePercent(str) {
+            return (parseFloat(str.replace("%","").replace(",",".").trim()) || 0) / 100;
+        }
+        function formatMoeda(v) {
+            return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+        }
+
+        // ===================================================================
+        // CORE LOGIC
+        // ===================================================================
+        function gerarCronograma(capital, qtdPrestacoes, taxa, dtStr, metodo) {
+            let dtPrimeira = parseDataBR(dtStr);
+            if (!dtPrimeira || isNaN(dtPrimeira.getTime())) {
+                alert("Data inválida. Use DD/MM/AAAA"); return [];
+            }
+
+            let hoje = new Date(); hoje.setHours(0,0,0,0);
+            dtPrimeira.setHours(0,0,0,0);
+
+            let diaVencimento = dtPrimeira.getDate();
+            let saldo = capital;
+            let linhas = [];
+            let contadorParcela = 1;
+
+            let proximoVenc = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimento);
+            if (proximoVenc <= hoje) {
+                proximoVenc = addMonthsNoOverflow(proximoVenc, 1);
+            }
+
+            let cursorData = new Date(proximoVenc);
+            let dataAnterior = new Date(hoje);
+
+            // --- FASE 1: GAP ---
+            while (cursorData < dtPrimeira) {
+                let dias = diffDays(cursorData, dataAnterior);
+                let fatorJuros = taxa;
+                if (dias < 28) {
+                    fatorJuros = (taxa / 30.0) * dias;
+                }
+                let juros = saldo * fatorJuros;
+                let amort = 0.0;
+                let parcela = juros;
+
+                linhas.push({
+                    p: contadorParcela,
+                    data: formatDataBR(cursorData),
+                    taxa: taxa,
+                    juros: juros,
+                    amort: amort,
+                    valor: parcela,
+                    saldo: saldo
+                });
+                contadorParcela++;
+                dataAnterior = new Date(cursorData);
+                cursorData = addMonthsNoOverflow(cursorData, 1);
+            }
+
+            // --- FASE 2: AMORTIZAÇÃO ---
+            cursorData = new Date(dtPrimeira);
+            
+            let amortFixa = 0;
+            let pmtPrice = 0;
+
+            if (metodo === "SAC") {
+                amortFixa = capital / qtdPrestacoes;
+            } else {
+                if (taxa > 0) {
+                    let f = Math.pow((1+taxa), qtdPrestacoes);
+                    pmtPrice = capital * (taxa * f) / (f - 1);
+                } else {
+                    pmtPrice = capital / qtdPrestacoes;
+                }
+            }
+
+            for (let i = 0; i < qtdPrestacoes; i++) {
+                let dias = diffDays(cursorData, dataAnterior);
+                let fatorJuros = taxa;
+
+                if (dias < 28) {
+                    fatorJuros = (taxa / 30.0) * dias;
+                }
+
+                let juros = saldo * fatorJuros;
+                let amort = 0;
+                let parcela = 0;
+
+                if (metodo === "SAC") {
+                    amort = amortFixa;
+                    parcela = amort + juros;
+                } else {
+                    if (taxa > 0) {
+                        parcela = pmtPrice;
+                        amort = parcela - juros;
+                    } else {
+                        amort = pmtPrice;
+                        parcela = amort;
+                    }
+                }
+
+                saldo -= amort;
+                if (saldo < 0) saldo = 0;
+
+                linhas.push({
+                    p: contadorParcela,
+                    data: formatDataBR(cursorData),
+                    taxa: taxa,
+                    juros: juros,
+                    amort: amort,
+                    valor: parcela,
+                    saldo: saldo
+                });
+
+                contadorParcela++;
+                dataAnterior = new Date(cursorData);
+                cursorData = addMonthsNoOverflow(cursorData, 1);
+            }
+
+            return linhas;
+        }
+
+        // --- GUI Logic ---
+        function gerar() {
+            const capital = parseMoney(document.getElementById('capital').value);
+            const qtd = parseInt(document.getElementById('qtdPrestacoes').value);
+            const dtStr = document.getElementById('dataPrimeira').value;
+            const txPoup = parsePercent(document.getElementById('taxaPoupanca').value);
+            const txInv = parsePercent(document.getElementById('taxaInvestimento').value);
+            const metodoInv = document.getElementById('metodoInvestimento').value;
+
+            if(qtd <= 0) { alert("Qtd deve ser maior que zero"); return; }
+
+            dadosPlan = gerarCronograma(capital, qtd, txPoup, dtStr, "SAC");
+            dadosInv = gerarCronograma(capital, qtd, txInv, dtStr, metodoInv);
+
+            renderTable('tablePlan', dadosPlan);
+            renderTable('tableInv', dadosInv);
+
+            // ALTERADO: Título Dinâmico
+            document.getElementById('headerPlan').innerText = `${nomePlanoAtual} (SAC)`;
+            document.getElementById('headerInv').innerText = `INVESTIMENTO (${metodoInv})`;
+
+            updateCards(dadosPlan, dadosInv);
+        }
+
+        function renderTable(id, data) {
+            const tb = document.querySelector(`#${id} tbody`);
+            tb.innerHTML = "";
+            data.forEach(r => {
+                tb.innerHTML += `<tr>
+                    <td>${r.p}</td><td>${r.data}</td>
+                    <td>${(r.taxa*100).toFixed(2)}%</td>
+                    <td>${formatMoeda(r.juros)}</td>
+                    <td>${formatMoeda(r.amort)}</td>
+                    <td>${formatMoeda(r.valor)}</td>
+                    <td>${formatMoeda(r.saldo)}</td>
+                </tr>`;
+            });
+        }
+
+        function updateCards(d1, d2) {
+            const sumJ = d => d.reduce((a,b)=>a+b.juros,0);
+            const sumT = d => d.reduce((a,b)=>a+b.valor,0);
+
+            let totP = sumT(d1), jurP = sumJ(d1);
+            let totI = sumT(d2), jurI = sumJ(d2);
+
+            let diff = 0;
+            if(jurP > 0) diff = ((jurI / jurP) - 1) * 100;
+
+            document.getElementById('lblPlanTotal').innerText = `Total Pago: ${formatMoeda(totP)}`;
+            document.getElementById('lblPlanJuros').innerText = `Juros: ${formatMoeda(jurP)}`;
+            // ALTERADO: Nome do Card
+            document.getElementById('cardPlan').querySelector('h3').innerText = nomePlanoAtual;
+
+            document.getElementById('lblInvTotal').innerText = `Total Pago: ${formatMoeda(totI)}`;
+            document.getElementById('lblInvJuros').innerText = `Juros: ${formatMoeda(jurI)}`;
+            document.getElementById('lblDiff').innerText = `➡ ${diff>0?'+':''}${diff.toFixed(2)}%`;
+
+            const cP = document.getElementById('cardPlan');
+            const cI = document.getElementById('cardInvest');
+            
+            if(jurI > jurP) {
+                cI.className = "result-card card-red";
+                cP.className = "result-card card-green";
+            } else {
+                cI.className = "result-card card-green";
+                cP.className = "result-card card-red";
+            }
+        }
+
+        function exportarExcel() {
+            if(!dadosPlan.length) { alert("Gere dados primeiro"); return; }
+            const fmt = arr => arr.map(r => ({
+                "Parcela": r.p, "Data": r.data, "Taxa": (r.taxa*100).toFixed(2)+"%",
+                "Juros": r.juros, "Amortização": r.amort, "Valor": r.valor, "Saldo": r.saldo
+            }));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fmt(dadosPlan)), nomePlanoAtual.replace(" ","_"));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fmt(dadosInv)), "Investimento");
+            XLSX.writeFile(wb, "Simulacao_Hawk_v2.5.xlsx");
+        }
+
+        // --- API / Modal Logic ---
+        function abrirIndices() { document.getElementById('modalIndices').style.display='flex'; }
+        function fecharIndices() { document.getElementById('modalIndices').style.display='none'; }
+        
+        // ALTERADO: Resetar nome ao digitar manualmente
+        document.getElementById('taxaPoupanca').addEventListener('input', () => {
+            nomePlanoAtual = "Índice Utilizado: Manual";
+            // Atualiza visualmente se já houver dados gerados
+            if(dadosPlan.length > 0) {
+                document.getElementById('cardPlan').querySelector('h3').innerText = nomePlanoAtual;
+                document.getElementById('headerPlan').innerText = `${nomePlanoAtual} (SAC)`;
+            }
+        });
+
+        async function buscarIndices() {
+            const sel = document.getElementById('selIndice').value;
+            const codes = { 'poupanca':195, 'cdi':4391, 'tr':226, 'selic':4390, 'ipca':433, 'igpm':189 };
+            
+            const iM = document.getElementById('iniMes').value.padStart(2,'0');
+            const iY = document.getElementById('iniAno').value;
+            const fM = document.getElementById('fimMes').value.padStart(2,'0');
+            const fY = document.getElementById('fimAno').value;
+
+            let lastDay = new Date(fY, fM, 0).getDate();
+            let sIni = `01/${iM}/${iY}`;
+            let sFim = `${lastDay}/${fM}/${fY}`;
+            
+            let d1 = new Date(iY, iM-1, 1);
+            let d2 = new Date(fY, fM-1, 1);
+            if(d1 > d2) { alert("Data inicial maior que final"); return; }
+
+            const apiUrl = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${codes[sel]}/dados?formato=json&dataInicial=${sIni}&dataFinal=${sFim}`;
+            const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+
+            const tbody = document.querySelector('#tableIndices tbody');
+            tbody.innerHTML = "<tr><td colspan='2'>Carregando...</td></tr>";
+
+            try {
+                const resp = await fetch(proxy);
+                const dados = await resp.json();
+
+                if(!dados || dados.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='2'>Nenhum dado encontrado</td></tr>";
+                    return;
+                }
+
+                // Agrupar e calcular médias
+                let groups = {};
+                let order = [];
+
+                dados.forEach(d => {
+                    let pts = d.data.split('/');
+                    let key = `${pts[2]}-${pts[1]}`; // YYYY-MM
+                    if(!groups[key]) {
+                        groups[key] = { vals: [], name: `${MESES_PT[parseInt(pts[1])-1].substring(0,3)}/${pts[2]}` };
+                        order.push(key);
+                    }
+                    groups[key].vals.push(parseFloat(d.valor));
+                });
+
+                tbody.innerHTML = "";
+                let statsData = [];
+
+                order.forEach(k => {
+                    let g = groups[k];
+                    let mean = g.vals.reduce((a,b)=>a+b,0) / g.vals.length;
+                    
+                    statsData.push({ val: mean, name: g.name });
+                    tbody.innerHTML += `<tr><td>${g.name}</td><td>${mean.toFixed(4)}%</td></tr>`;
+                });
+
+                // Stats
+                if(statsData.length > 0) {
+                    let allVals = statsData.map(x => x.val);
+                    let generalMean = allVals.reduce((a,b)=>a+b,0)/allVals.length;
+                    
+                    let acum = 1.0;
+                    allVals.forEach(v => acum *= (1 + v/100));
+                    let acumPct = (acum-1)*100;
+
+                    let maxObj = statsData.reduce((prev, curr) => (prev.val > curr.val) ? prev : curr);
+                    let minObj = statsData.reduce((prev, curr) => (prev.val < curr.val) ? prev : curr);
+
+                    document.getElementById('idxMedia').innerText = `Média: ${generalMean.toFixed(4)}%`;
+                    document.getElementById('idxAcum').innerText = `Acumulado: ${acumPct.toFixed(4)}%`;
+                    document.getElementById('idxMaior').innerText = `Maior: ${maxObj.val.toFixed(4)}% (${maxObj.name})`;
+                    document.getElementById('idxMenor').innerText = `Menor: ${minObj.val.toFixed(4)}% (${minObj.name})`;
+
+                    mediaIndiceEncontrada = generalMean;
+                }
+
+            } catch(e) {
+                tbody.innerHTML = `<tr><td colspan='2' style='color:red'>Erro API: ${e.message}</td></tr>`;
+            }
+        }
+
+        function aplicarIndice() {
+            if(!mediaIndiceEncontrada) { alert("Nenhuma média disponível"); return; }
+            const sel = document.getElementById('selIndice');
+            const nomeIndice = sel.options[sel.selectedIndex].text.toUpperCase();
+            // ALTERADO: Define nome explícito
+            nomePlanoAtual = `Índice Utilizado: ${nomeIndice}`;
+            
+            document.getElementById('taxaPoupanca').value = mediaIndiceEncontrada.toFixed(4).replace('.', ',');
+            fecharIndices();
+        }
+
+    </script>
+</body>
+</html>

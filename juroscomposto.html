@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Financeira Pro</title>
+    <style>
+        /* --- Configuração de Cores e Fontes (Idêntico ao Python) --- */
+        :root {
+            --bg-color: #F0F2F5;
+            --white: #FFFFFF;
+            --primary: #0056b3;
+            --text: #333333;
+            --accent: #28a745; /* Verde */
+            --red: #D32F2F;    /* Vermelho */
+            --blue: #0056b3;   /* Azul */
+            --border: #CCCCCC;
+            --summary-bg: #E3F2FD;
+            --btn-reset: #6c757d;
+            --placeholder: #888888;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 500px;
+            background-color: var(--bg-color);
+            /* No Python é uma janela, aqui simulamos o corpo */
+            min-height: 800px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* --- Header --- */
+        .header {
+            background-color: var(--primary);
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 22px; /* ~16pt bold */
+            font-weight: bold;
+            margin: 0;
+        }
+
+        /* --- Main Content --- */
+        .main-frame {
+            padding: 20px;
+        }
+
+        .label-title {
+            font-size: 15px; /* ~11pt bold */
+            font-weight: bold;
+            color: var(--text);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        /* --- Seleção (Radio Buttons) --- */
+        .frame-select {
+            background-color: var(--white);
+            border: 1px solid transparent; /* relief flat */
+            padding: 15px 10px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .radio-group label {
+            font-size: 13px; /* ~10pt */
+            margin-right: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* --- Inputs --- */
+        .frame-inputs {
+            background-color: var(--white);
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .frame-inputs label {
+            font-size: 13px; /* ~10pt */
+            color: var(--text);
+        }
+
+        input[type="text"] {
+            font-family: 'Consolas', monospace;
+            font-size: 15px; /* ~11pt */
+            padding: 8px;
+            border: 1px solid var(--border);
+            background-color: #FAFAFA;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        /* Estilo para campo desabilitado/calculado */
+        input.calculating {
+            background-color: #E9ECEF;
+            color: var(--placeholder);
+        }
+
+        input.result-money {
+            background-color: var(--white);
+            color: var(--text); /* Será sobrescrito no JS se necessário, mas o Python usa disabledforeground */
+            font-weight: bold;
+        }
+
+        /* --- Resumo --- */
+        .frame-summary {
+            background-color: var(--summary-bg);
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .frame-summary h3 {
+            font-size: 13px; /* ~10pt bold */
+            color: #0D47A1;
+            margin: 0 0 10px 0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .summary-value {
+            font-family: 'Consolas', monospace;
+            font-size: 16px; /* ~12pt bold */
+            font-weight: bold;
+        }
+
+        /* Cores do Resumo */
+        .text-green { color: var(--accent); }
+        .text-red { color: var(--red); }
+        .text-blue { color: var(--blue); }
+
+        /* --- Botão Limpar --- */
+        .btn-clear {
+            background-color: var(--btn-reset);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+
+        .btn-clear:hover {
+            background-color: #5a6268;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Calculo de Financiamento</h1>
+    </div>
+
+    <div class="main-frame">
+        <span class="label-title">O que deseja calcular?</span>
+        <div class="frame-select">
+            <div class="radio-group" style="display: flex;">
+                <label><input type="radio" name="target" value="pv" onchange="updateState()"> Valor Financiado</label>
+                <label><input type="radio" name="target" value="pmt" onchange="updateState()"> Valor Parcela</label>
+                <label><input type="radio" name="target" value="i" checked onchange="updateState()"> Taxa Juros</label>
+            </div>
+        </div>
+
+        <div class="frame-inputs">
+            <label>Valor a Financiar:</label>
+            <input type="text" id="ent_pv" placeholder="R$ 0,00">
+
+            <label>Qtd. Parcelas (Meses):</label>
+            <input type="text" id="ent_n" placeholder="">
+
+            <label>Valor da Parcela:</label>
+            <input type="text" id="ent_pmt" placeholder="R$ 0,00">
+
+            <label>Taxa de Juros (% a.m.):</label>
+            <input type="text" id="ent_i" placeholder="0,00%">
+        </div>
+
+        <div class="frame-summary">
+            <h3>Resumo da Operação</h3>
+            
+            <div class="summary-row">
+                <span class="summary-label">Total Pago (Total Parcelas):</span>
+                <span id="lbl_total_paid" class="summary-value text-green">R$ 0,00</span>
+            </div>
+
+            <div class="summary-row">
+                <span class="summary-label">Taxa de Juros Mensal:</span>
+                <span id="lbl_monthly_rate" class="summary-value text-red">0,0000%</span>
+            </div>
+
+            <div class="summary-row">
+                <span class="summary-label">Taxa de Juros Anual:</span>
+                <span id="lbl_annual_rate" class="summary-value text-red">0,0000%</span>
+            </div>
+
+            <div class="summary-row">
+                <span class="summary-label">Total Juros Pagos (R$):</span>
+                <span id="lbl_total_interest" class="summary-value text-blue">R$ 0,00</span>
+            </div>
+
+            <div class="summary-row">
+                <span class="summary-label">Total Juros Pagos (%):</span>
+                <span id="lbl_percent_interest" class="summary-value text-blue">0,00%</span>
+            </div>
+        </div>
+
+        <button class="btn-clear" onclick="clearAll()">Limpar Campos</button>
+    </div>
+</div>
+
+<script>
+    // --- Estado Inicial e Defaults ---
+    const defaults = {
+        pv: "R$ 0,00",
+        n: "",
+        pmt: "R$ 0,00",
+        i: "0,00%"
+    };
+
+    const inputs = {
+        pv: document.getElementById('ent_pv'),
+        n: document.getElementById('ent_n'),
+        pmt: document.getElementById('ent_pmt'),
+        i: document.getElementById('ent_i')
+    };
+
+    // --- Máscaras (Lógica ATM: Direita para Esquerda) ---
+    
+    function getDigits(val) {
+        return val.replace(/\D/g, '');
+    }
+
+    function formatCurrency(value) {
+        let digits = getDigits(value);
+        if (!digits) return "R$ 0,00";
+        let number = parseInt(digits) / 100;
+        return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function formatPercent(value) {
+        let digits = getDigits(value);
+        if (!digits) return "0,00%";
+        let number = parseInt(digits) / 100;
+        // Adiciona 2 casas decimais fixas na exibição da máscara padrão
+        return number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+    }
+
+    function formatInt(value) {
+        let digits = getDigits(value);
+        if (!digits) return "";
+        return parseInt(digits).toString();
+    }
+
+    // --- Parsers (Converter String para Float/Int) ---
+    function parseCurrency(val) {
+        let digits = getDigits(val);
+        return digits ? parseFloat(digits) / 100.0 : 0.0;
+    }
+
+    function parseIntVal(val) {
+        let digits = getDigits(val);
+        return digits ? parseInt(digits) : 0;
+    }
+
+    // --- Event Listeners de Input ---
+    inputs.pv.addEventListener('input', (e) => {
+        e.target.value = formatCurrency(e.target.value);
+        calculateAuto();
+    });
+    inputs.pmt.addEventListener('input', (e) => {
+        e.target.value = formatCurrency(e.target.value);
+        calculateAuto();
+    });
+    inputs.i.addEventListener('input', (e) => {
+        e.target.value = formatPercent(e.target.value);
+        calculateAuto();
+    });
+    inputs.n.addEventListener('input', (e) => {
+        e.target.value = formatInt(e.target.value);
+        calculateAuto();
+    });
+
+    // --- Lógica de Estado (Habilitar/Desabilitar) ---
+    function updateState() {
+        const target = document.querySelector('input[name="target"]:checked').value;
+
+        // Primeiro reseta todos
+        for (const key in inputs) {
+            const el = inputs[key];
+            el.disabled = false;
+            el.classList.remove('calculating');
+            el.style.color = "#333333"; // Cor normal
+            el.style.fontWeight = "normal";
+            
+            // Se o campo tinha "Calculando..." ou estava com resultado, limpa
+            if (el.value === "Calculando..." || el.dataset.isResult === "true") {
+                el.value = defaults[key];
+                el.dataset.isResult = "false";
+            }
+        }
+
+        // Configura o alvo
+        const targetEl = inputs[target];
+        targetEl.value = "Calculando...";
+        targetEl.disabled = true;
+        targetEl.classList.add('calculating');
+        
+        calculateAuto();
+    }
+
+    // --- Método da Bisseção (JS Port) ---
+    function calculateRateBisection(n, pmt, pv) {
+        let low = 0.0;
+        let high = 1.0; // 100% ao mês
+
+        for (let j = 0; j < 100; j++) {
+            let mid = (low + high) / 2.0;
+            let calc_pmt = 0;
+
+            if (mid === 0) {
+                calc_pmt = pv / n;
+            } else {
+                let power = Math.pow(1 + mid, n);
+                if (!isFinite(power)) {
+                    calc_pmt = Infinity;
+                } else {
+                    calc_pmt = pv * (mid * power) / (power - 1);
+                }
+            }
+
+            if (Math.abs(calc_pmt - pmt) < 0.001) {
+                return mid;
+            }
+
+            if (calc_pmt > pmt) {
+                high = mid;
+            } else {
+                low = mid;
+            }
+        }
+        return (low + high) / 2.0;
+    }
+
+    // --- Atualizar Resumo ---
+    function updateSummary(pv, pmt, n, i_decimal) {
+        const lblTotalPaid = document.getElementById('lbl_total_paid');
+        const lblMonthlyRate = document.getElementById('lbl_monthly_rate');
+        const lblAnnualRate = document.getElementById('lbl_annual_rate');
+        const lblTotalInterest = document.getElementById('lbl_total_interest');
+        const lblPercentInterest = document.getElementById('lbl_percent_interest');
+
+        if (pmt <= 0 || n <= 0) {
+            lblTotalPaid.innerText = "R$ 0,00";
+            lblMonthlyRate.innerText = "0,0000%";
+            lblAnnualRate.innerText = "0,0000%";
+            lblTotalInterest.innerText = "R$ 0,00";
+            lblPercentInterest.innerText = "0,00%";
+            return;
+        }
+
+        let totalPaid = pmt * n;
+        let totalInterest = totalPaid - pv;
+        let percentInterest = pv > 0 ? (totalInterest / pv) : 0.0;
+        
+        // Taxa anual: (1+i)^12 - 1
+        let i_annual = Math.pow(1 + i_decimal, 12) - 1;
+
+        // Formatadores
+        const fmtMoney = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+        const fmtPercent2 = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmtPercent4 = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 4, maximumFractionDigits: 4 });
+
+        lblTotalPaid.innerText = fmtMoney.format(totalPaid);
+        lblTotalInterest.innerText = fmtMoney.format(totalInterest);
+        lblPercentInterest.innerText = fmtPercent2.format(percentInterest);
+        
+        // No JS, Intl percent multiplica por 100 auto, então passamos decimal
+        lblMonthlyRate.innerText = fmtPercent4.format(i_decimal);
+        lblAnnualRate.innerText = fmtPercent4.format(i_annual);
+    }
+
+    // --- Definir Resultado no Input ---
+    function setResult(key, value, type) {
+        const el = inputs[key];
+        el.disabled = true; // Visualmente desabilitado mas legível
+        el.classList.remove('calculating');
+        
+        // Definir cor do resultado (verde e negrito para inputs calculados)
+        el.style.color = "#28a745"; 
+        el.style.fontWeight = "bold";
+        el.style.backgroundColor = "#FFFFFF"; // Fundo branco para ler melhor
+        el.dataset.isResult = "true";
+
+        if (type === 'money') {
+            el.value = value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        } else if (type === 'percent') {
+            // Mostra 4 casas se for resultado calculado de taxa
+            el.value = value.toLocaleString('pt-BR', { style: 'percent', minimumFractionDigits: 4 }) ;
+        }
+    }
+
+    // --- Cálculo Principal ---
+    function calculateAuto() {
+        const target = document.querySelector('input[name="target"]:checked').value;
+
+        let pv = 0, n = 0, pmt = 0, i_decimal = 0;
+
+        // Try-catch silencioso (igual ao python)
+        try {
+            if (target !== 'pv') pv = parseCurrency(inputs.pv.value);
+            if (target !== 'n') n = parseIntVal(inputs.n.value); // N nunca é target na V5
+            if (target !== 'pmt') pmt = parseCurrency(inputs.pmt.value);
+            if (target !== 'i') i_decimal = parseCurrency(inputs.i.value); // parseCurrency já divide por 100 (150 -> 1.5), mas a taxa visual é %, então é 1.5%. ParseCurrency retorna 1.5.
+             // A função parseCurrency pega digitos e divide por 100. Ex: digita 150 -> 1,50. Isso é a taxa %.
+             // Para cálculo matemático precisamos dividir por 100 DE NOVO.
+             // Correção: o parseCurrency retorna o valor visual float. Ex: 1.50.
+             // Precisamos de 0.0150 para a conta.
+             i_decimal = i_decimal / 100.0;
+        } catch (e) {
+            return;
+        }
+
+        let result = 0;
+        let final_pv = 0, final_pmt = 0, final_n = 0, final_i = 0;
+        let valid = false;
+
+        if (target === 'pmt') {
+            if (n > 0 && pv > 0) {
+                if (i_decimal === 0) {
+                    result = pv / n;
+                } else {
+                    let power = Math.pow(1 + i_decimal, n);
+                    result = pv * (i_decimal * power) / (power - 1);
+                }
+                setResult('pmt', result, 'money');
+                final_pv = pv; final_n = n; final_pmt = result; final_i = i_decimal;
+                valid = true;
+            }
+        } 
+        else if (target === 'pv') {
+            if (n > 0 && pmt > 0) {
+                if (i_decimal === 0) {
+                    result = pmt * n;
+                } else {
+                    let power = Math.pow(1 + i_decimal, n);
+                    result = pmt * (power - 1) / (i_decimal * power);
+                }
+                setResult('pv', result, 'money');
+                final_pv = result; final_n = n; final_pmt = pmt; final_i = i_decimal;
+                valid = true;
+            }
+        }
+        else if (target === 'i') {
+            if (pv > 0 && n > 0 && pmt > 0) {
+                let total_paid = pmt * n;
+                if (total_paid <= pv) {
+                    setResult('i', 0, 'percent');
+                    final_i = 0;
+                } else {
+                    result = calculateRateBisection(n, pmt, pv); // retorna decimal puro (ex: 0.015)
+                    setResult('i', result, 'percent');
+                    final_i = result;
+                }
+                final_pv = pv; final_n = n; final_pmt = pmt;
+                valid = true;
+            }
+        }
+
+        if (valid) {
+            updateSummary(final_pv, final_pmt, final_n, final_i);
+        } else {
+            // Limpa resumo se inválido
+            document.getElementById('lbl_total_paid').innerText = "R$ ...";
+            document.getElementById('lbl_monthly_rate').innerText = "...";
+            document.getElementById('lbl_annual_rate').innerText = "...";
+            document.getElementById('lbl_total_interest').innerText = "R$ ...";
+            document.getElementById('lbl_percent_interest').innerText = "...";
+        }
+    }
+
+    // --- Limpar ---
+    function clearAll() {
+        // Reseta seleção para Taxa Juros
+        const radios = document.getElementsByName('target');
+        for(let r of radios) {
+            if(r.value === 'i') r.checked = true;
+        }
+
+        // Reseta valores
+        inputs.pv.value = defaults.pv;
+        inputs.n.value = defaults.n;
+        inputs.pmt.value = defaults.pmt;
+        inputs.i.value = defaults.i;
+
+        // Remove estados
+        for (const key in inputs) {
+            delete inputs[key].dataset.isResult;
+        }
+
+        updateState();
+        
+        // Limpa resumo explicitamente
+        document.getElementById('lbl_total_paid').innerText = "R$ 0,00";
+        document.getElementById('lbl_monthly_rate').innerText = "0,0000%";
+        document.getElementById('lbl_annual_rate').innerText = "0,0000%";
+        document.getElementById('lbl_total_interest').innerText = "R$ 0,00";
+        document.getElementById('lbl_percent_interest').innerText = "0,00%";
+    }
+
+    // Inicializa
+    window.onload = function() {
+        updateState();
+    };
+
+</script>
+
+</body>
+</html>
