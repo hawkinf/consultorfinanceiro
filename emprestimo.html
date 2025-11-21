@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Financeiro - Hawk v2.5</title>
+    <title>Simulador Empréstimo</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg-color: #1F242B;
@@ -30,8 +31,22 @@
             align-items: center;
         }
 
-        h1 { margin-bottom: 5px; font-size: 1.8rem; }
-        h2 { margin-top: 0; font-size: 1rem; font-weight: normal; color: #ccc; margin-bottom: 20px; }
+        /* Botão Voltar */
+        .btn-back {
+            align-self: flex-start;
+            text-decoration: none;
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s;
+        }
+        .btn-back:hover { color: var(--accent-blue); }
+
+        h1 { margin-bottom: 5px; font-size: 1.8rem; text-align: center; }
+        h2 { margin-top: 0; font-size: 1rem; font-weight: normal; color: #ccc; margin-bottom: 20px; text-align: center; }
 
         /* Layout de Controles */
         .controls {
@@ -61,7 +76,7 @@
         input:focus, select:focus { outline: 2px solid var(--accent-blue); }
 
         /* Botões */
-        .actions { margin-top: 20px; display: flex; gap: 10px; }
+        .actions { margin-top: 20px; display: flex; gap: 10px; justify-content: center; width: 100%; }
         button {
             background-color: var(--accent-blue);
             color: white;
@@ -149,9 +164,22 @@
         .modal-body { overflow-y: auto; margin-bottom: 10px; flex: 1; min-height: 200px; }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .close:hover { color: white; }
+
+        /* Rodapé */
+        footer {
+            margin-top: 40px;
+            color: #666;
+            font-size: 0.8rem;
+            text-align: center;
+            width: 100%;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
     </style>
 </head>
 <body>
+
+    <a href="index.html" class="btn-back"><i class="fas fa-home"></i> Menu Principal</a>
 
     <h1>💠 Simulador Financeiro v2.5</h1>
     <h2>Comparação clara e direta</h2>
@@ -230,6 +258,10 @@
             </div>
         </div>
     </div>
+
+    <footer>
+        (C) 2025 by Aguinaldo Liesack Baptistini
+    </footer>
 
     <div id="modalIndices" class="modal">
         <div class="modal-content">

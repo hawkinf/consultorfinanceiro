@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Financeira Pro</title>
+    <title>Cálculo de Financiamento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        /* --- Configuração de Cores e Fontes (Idêntico ao Python) --- */
+        /* --- Configuração de Cores e Fontes --- */
         :root {
             --bg-color: #F0F2F5;
             --white: #FFFFFF;
@@ -24,20 +26,39 @@
             font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            padding: 0;
+            padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
         }
 
         .container {
-            width: 500px;
-            background-color: var(--bg-color);
-            /* No Python é uma janela, aqui simulamos o corpo */
-            min-height: 800px;
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--white);
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 8px; /* Adicionado para suavizar */
+            overflow: hidden; /* Para manter o header redondo */
         }
+
+        /* Botão Voltar */
+        .btn-back {
+            align-self: center;
+            width: 100%;
+            max-width: 500px;
+            text-decoration: none;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s;
+        }
+        .btn-back:hover { color: var(--primary); }
+
 
         /* --- Header --- */
         .header {
@@ -50,7 +71,7 @@
 
         .header h1 {
             color: white;
-            font-size: 22px; /* ~16pt bold */
+            font-size: 22px; 
             font-weight: bold;
             margin: 0;
         }
@@ -61,7 +82,7 @@
         }
 
         .label-title {
-            font-size: 15px; /* ~11pt bold */
+            font-size: 15px;
             font-weight: bold;
             color: var(--text);
             margin-bottom: 5px;
@@ -71,7 +92,7 @@
         /* --- Seleção (Radio Buttons) --- */
         .frame-select {
             background-color: var(--white);
-            border: 1px solid transparent; /* relief flat */
+            border: 1px solid transparent; 
             padding: 15px 10px;
             margin-bottom: 15px;
             display: flex;
@@ -79,7 +100,7 @@
         }
 
         .radio-group label {
-            font-size: 13px; /* ~10pt */
+            font-size: 13px;
             margin-right: 15px;
             cursor: pointer;
             display: flex;
@@ -98,13 +119,13 @@
         }
 
         .frame-inputs label {
-            font-size: 13px; /* ~10pt */
+            font-size: 13px;
             color: var(--text);
         }
 
         input[type="text"] {
             font-family: 'Consolas', monospace;
-            font-size: 15px; /* ~11pt */
+            font-size: 15px;
             padding: 8px;
             border: 1px solid var(--border);
             background-color: #FAFAFA;
@@ -125,7 +146,7 @@
 
         input.result-money {
             background-color: var(--white);
-            color: var(--text); /* Será sobrescrito no JS se necessário, mas o Python usa disabledforeground */
+            color: var(--text);
             font-weight: bold;
         }
 
@@ -138,7 +159,7 @@
         }
 
         .frame-summary h3 {
-            font-size: 13px; /* ~10pt bold */
+            font-size: 13px; 
             color: #0D47A1;
             margin: 0 0 10px 0;
         }
@@ -157,7 +178,7 @@
 
         .summary-value {
             font-family: 'Consolas', monospace;
-            font-size: 16px; /* ~12pt bold */
+            font-size: 16px; 
             font-weight: bold;
         }
 
@@ -179,19 +200,30 @@
             cursor: pointer;
             margin-top: 20px;
             text-transform: uppercase;
+            border-radius: 4px;
         }
 
         .btn-clear:hover {
             background-color: #5a6268;
         }
 
+        /* Rodapé */
+        footer {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+        }
+
     </style>
 </head>
 <body>
 
+<a href="index.html" class="btn-back"><i class="fas fa-home"></i> Menu Principal</a>
+
 <div class="container">
     <div class="header">
-        <h1>Calculo de Financiamento</h1>
+        <h1>Cálculo de Financiamento</h1>
     </div>
 
     <div class="main-frame">
@@ -250,6 +282,10 @@
         <button class="btn-clear" onclick="clearAll()">Limpar Campos</button>
     </div>
 </div>
+
+<footer>
+    (C) 2025 by Aguinaldo Liesack Baptistini
+</footer>
 
 <script>
     // --- Estado Inicial e Defaults ---
