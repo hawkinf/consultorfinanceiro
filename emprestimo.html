@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador Empréstimo</title>
+
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#1F242B">
+
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -98,7 +102,7 @@
             gap: 20px;
             width: 100%;
             max-width: 1200px;
-            margin-top: 20px;
+            margin-top: 20px; /* Espaço entre tabela e card */
         }
         .result-card {
             flex: 1;
@@ -137,11 +141,29 @@
             text-align: center;
         }
         .table-scroll { overflow-y: auto; flex: 1; }
+        
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { position: sticky; top: 0; background-color: var(--border-color); z-index: 1; text-align: center; }
-        th, td { padding: 8px; text-align: right; border-bottom: 1px solid #333; }
-        th:first-child, td:first-child { text-align: center; } /* Parcela */
-        td:nth-child(2) { text-align: center; } /* Data */
+        
+        /* Ajuste de Alinhamento dos Títulos */
+        th { 
+            position: sticky; 
+            top: 0; 
+            background-color: var(--border-color); 
+            z-index: 1; 
+            text-align: center; /* Centraliza Titulos */
+            padding: 8px;
+            border-bottom: 1px solid #333;
+        }
+        
+        td { 
+            padding: 8px; 
+            text-align: right; /* Mantém valores à direita */
+            border-bottom: 1px solid #333; 
+        }
+        
+        td:first-child { text-align: center; } /* Parcela centralizada */
+        td:nth-child(2) { text-align: center; } /* Data centralizada */
+        
         tr:nth-child(even) { background-color: rgba(255,255,255,0.03); }
 
         /* Modal */
@@ -182,7 +204,7 @@
     <a href="index.html" class="btn-back"><i class="fas fa-home"></i> Menu Principal</a>
 
     <h1>💠 Simulador Empréstimo</h1>
-    <h2>Comparação clara e direta</h2>
+    <h2>Cálculo de parcelas e cronograma</h2>
 
     <div class="controls">
         <div class="control-group">
@@ -198,11 +220,7 @@
             <input type="text" id="dataPrimeira" placeholder="DD/MM/AAAA" maxlength="10" oninput="fmtDate(this)">
         </div>
         <div class="control-group">
-            <label>Índice (%)</label>
-            <input type="text" id="taxaPoupanca" value="0,00" oninput="fmtPercent(this)">
-        </div>
-        <div class="control-group">
-            <label>Empréstimo (%)</label>
+            <label>Taxa de Juros (%)</label>
             <input type="text" id="taxaInvestimento" value="0,00" oninput="fmtPercent(this)">
         </div>
         <div class="control-group">
@@ -215,47 +233,38 @@
     </div>
 
     <div class="actions">
-        <button class="secondary" onclick="abrirIndices()">💰 Índices</button>
+        <button class="secondary" onclick="abrirIndices()">💰 Consultar Índices</button>
         <button onclick="gerar()">Gerar</button>
         <button class="secondary" onclick="exportarExcel()">Exportar</button>
     </div>
 
-    <div class="cards-container">
-        <div id="cardPlan" class="result-card card-green">
-            <h3>Índice Utilizado: Manual</h3>
-            <p id="lblPlanTotal">Total Pago: R$ 0,00</p>
-            <p id="lblPlanJuros">Juros: R$ 0,00</p>
-        </div>
-        <div id="cardInvest" class="result-card card-red">
-            <h3>EMPRÉSTIMO</h3>
-            <p id="lblInvTotal">Total Pago: R$ 0,00</p>
-            <p id="lblInvJuros">Juros: R$ 0,00</p>
-            <p id="lblDiff" style="font-weight: bold; margin-top:10px;">➡ +0.00%</p>
-        </div>
-    </div>
-
     <div class="tables-wrapper">
         <div class="table-container">
-            <div class="table-header" id="headerPlan">Índice Utilizado: Manual (SAC)</div>
-            <div class="table-scroll">
-                <table id="tablePlan">
-                    <thead>
-                        <tr><th>#</th><th>Data</th><th>Taxa</th><th>Juros</th><th>Amort.</th><th>Valor</th><th>Saldo</th></tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        <div class="table-container">
-            <div class="table-header" id="headerInv">EMPRÉSTIMO (SAC)</div>
+            <div class="table-header" id="headerInv">CRONOGRAMA DE PAGAMENTOS</div>
             <div class="table-scroll">
                 <table id="tableInv">
                     <thead>
-                        <tr><th>#</th><th>Data</th><th>Taxa</th><th>Juros</th><th>Amort.</th><th>Valor</th><th>Saldo</th></tr>
+                        <tr>
+                            <th>#</th>
+                            <th>Data</th>
+                            <th>Taxa</th>
+                            <th>Juros</th>
+                            <th>Amort.</th>
+                            <th>Prestação</th>
+                            <th>Saldo</th>
+                        </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <div class="cards-container">
+        <div id="cardInvest" class="result-card card-red">
+            <h3>RESUMO DO EMPRÉSTIMO</h3>
+            <p id="lblInvTotal">Total Pago: R$ 0,00</p>
+            <p id="lblInvJuros">Juros: R$ 0,00</p>
         </div>
     </div>
 
@@ -269,7 +278,7 @@
                 <h3>Consulta Índices (BCB)</h3>
                 <span class="close" onclick="fecharIndices()">&times;</span>
             </div>
-            <p style="font-size:0.85rem; color:#aaa; margin-top:-5px;">Cálculo: Média de todos os registros do mês</p>
+            <p style="font-size:0.85rem; color:#aaa; margin-top:-5px;">Apenas para consulta histórica</p>
             
             <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
                 <div class="control-group">
@@ -281,6 +290,7 @@
                         <option value="selic">SELIC</option>
                         <option value="ipca">IPCA</option>
                         <option value="igpm">IGP-M</option>
+                        <option value="cheque_especial">Cheque Especial</option>
                     </select>
                 </div>
                 <div class="control-group">
@@ -310,20 +320,17 @@
             </div>
 
             <div style="background:#2A313B; padding:10px; border-radius:4px; font-size:0.9rem; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-                <div id="idxMedia">Média: 0.0000%</div>
-                <div id="idxAcum">Acumulado: 0.0000%</div>
+                <div id="idxMedia" style="color: #FF5555; font-weight: bold; font-size: 1.1rem; border: 1px solid #FF5555; border-radius: 4px; padding: 2px 5px; text-align:center;">Média: 0.0000%</div>
+                <div id="idxAcum" style="padding-top: 4px;">Acumulado: 0.0000%</div>
                 <div id="idxMaior">Maior: 0.0000%</div>
                 <div id="idxMenor">Menor: 0.0000%</div>
             </div>
-            <button style="margin-top:10px; width:100%;" onclick="aplicarIndice()">Usar Média Mensal</button>
         </div>
     </div>
 
     <script>
         // --- Estado Global ---
-        let dadosPlan = [];
         let dadosInv = [];
-        let nomePlanoAtual = "Índice Utilizado: Manual"; // Default
         let mediaIndiceEncontrada = 0;
 
         const MESES_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -537,23 +544,18 @@
             const capital = parseMoney(document.getElementById('capital').value);
             const qtd = parseInt(document.getElementById('qtdPrestacoes').value);
             const dtStr = document.getElementById('dataPrimeira').value;
-            const txPoup = parsePercent(document.getElementById('taxaPoupanca').value);
             const txInv = parsePercent(document.getElementById('taxaInvestimento').value);
             const metodoInv = document.getElementById('metodoInvestimento').value;
 
             if(qtd <= 0) { alert("Qtd deve ser maior que zero"); return; }
 
-            dadosPlan = gerarCronograma(capital, qtd, txPoup, dtStr, "SAC");
             dadosInv = gerarCronograma(capital, qtd, txInv, dtStr, metodoInv);
 
-            renderTable('tablePlan', dadosPlan);
             renderTable('tableInv', dadosInv);
 
-            // ALTERADO: Título Dinâmico
-            document.getElementById('headerPlan').innerText = `${nomePlanoAtual} (SAC)`;
             document.getElementById('headerInv').innerText = `EMPRÉSTIMO (${metodoInv})`;
 
-            updateCards(dadosPlan, dadosInv);
+            updateCards(dadosInv);
         }
 
         function renderTable(id, data) {
@@ -571,66 +573,43 @@
             });
         }
 
-        function updateCards(d1, d2) {
+        function updateCards(data) {
             const sumJ = d => d.reduce((a,b)=>a+b.juros,0);
             const sumT = d => d.reduce((a,b)=>a+b.valor,0);
 
-            let totP = sumT(d1), jurP = sumJ(d1);
-            let totI = sumT(d2), jurI = sumJ(d2);
-
-            let diff = 0;
-            if(jurP > 0) diff = ((jurI / jurP) - 1) * 100;
-
-            document.getElementById('lblPlanTotal').innerText = `Total Pago: ${formatMoeda(totP)}`;
-            document.getElementById('lblPlanJuros').innerText = `Juros: ${formatMoeda(jurP)}`;
-            // ALTERADO: Nome do Card
-            document.getElementById('cardPlan').querySelector('h3').innerText = nomePlanoAtual;
+            let totI = sumT(data);
+            let jurI = sumJ(data);
 
             document.getElementById('lblInvTotal').innerText = `Total Pago: ${formatMoeda(totI)}`;
             document.getElementById('lblInvJuros').innerText = `Juros: ${formatMoeda(jurI)}`;
-            document.getElementById('lblDiff').innerText = `➡ ${diff>0?'+':''}${diff.toFixed(2)}%`;
-
-            const cP = document.getElementById('cardPlan');
-            const cI = document.getElementById('cardInvest');
-            
-            if(jurI > jurP) {
-                cI.className = "result-card card-red";
-                cP.className = "result-card card-green";
-            } else {
-                cI.className = "result-card card-green";
-                cP.className = "result-card card-red";
-            }
         }
 
         function exportarExcel() {
-            if(!dadosPlan.length) { alert("Gere dados primeiro"); return; }
+            if(!dadosInv.length) { alert("Gere dados primeiro"); return; }
             const fmt = arr => arr.map(r => ({
                 "Parcela": r.p, "Data": r.data, "Taxa": (r.taxa*100).toFixed(2)+"%",
                 "Juros": r.juros, "Amortização": r.amort, "Valor": r.valor, "Saldo": r.saldo
             }));
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fmt(dadosPlan)), nomePlanoAtual.replace(" ","_"));
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fmt(dadosInv)), "Emprestimo");
-            XLSX.writeFile(wb, "Simulacao_Hawk_v2.5.xlsx");
+            XLSX.writeFile(wb, "Simulacao_Emprestimo.xlsx");
         }
 
         // --- API / Modal Logic ---
         function abrirIndices() { document.getElementById('modalIndices').style.display='flex'; }
         function fecharIndices() { document.getElementById('modalIndices').style.display='none'; }
         
-        // ALTERADO: Resetar nome ao digitar manualmente
-        document.getElementById('taxaPoupanca').addEventListener('input', () => {
-            nomePlanoAtual = "Índice Utilizado: Manual";
-            // Atualiza visualmente se já houver dados gerados
-            if(dadosPlan.length > 0) {
-                document.getElementById('cardPlan').querySelector('h3').innerText = nomePlanoAtual;
-                document.getElementById('headerPlan').innerText = `${nomePlanoAtual} (SAC)`;
-            }
-        });
-
         async function buscarIndices() {
             const sel = document.getElementById('selIndice').value;
-            const codes = { 'poupanca':195, 'cdi':4391, 'tr':226, 'selic':4390, 'ipca':433, 'igpm':189 };
+            const codes = { 
+                'poupanca': 195, 
+                'cdi': 4391, 
+                'tr': 226, 
+                'selic': 4390, 
+                'ipca': 433, 
+                'igpm': 189, 
+                'cheque_especial': 25463 
+            };
             
             const iM = document.getElementById('iniMes').value.padStart(2,'0');
             const iY = document.getElementById('iniAno').value;
@@ -708,17 +687,6 @@
             } catch(e) {
                 tbody.innerHTML = `<tr><td colspan='2' style='color:red'>Erro API: ${e.message}</td></tr>`;
             }
-        }
-
-        function aplicarIndice() {
-            if(!mediaIndiceEncontrada) { alert("Nenhuma média disponível"); return; }
-            const sel = document.getElementById('selIndice');
-            const nomeIndice = sel.options[sel.selectedIndex].text.toUpperCase();
-            // ALTERADO: Define nome explícito
-            nomePlanoAtual = `Índice Utilizado: ${nomeIndice}`;
-            
-            document.getElementById('taxaPoupanca').value = mediaIndiceEncontrada.toFixed(4).replace('.', ',');
-            fecharIndices();
         }
 
     </script>
