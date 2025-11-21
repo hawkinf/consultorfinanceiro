@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultor Financeiro</title>
+    
+    <!-- Configuração PWA -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0056b3">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Importando ícones do Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -16,6 +23,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            user-select: none; /* Sensação de App nativo */
         }
 
         /* Container do Menu */
@@ -38,9 +46,9 @@
 
         /* Estilo dos Botões */
         .menu-link {
-            display: flex; /* Para alinhar ícone e texto */
+            display: flex;
             align-items: center;
-            justify-content: flex-start; /* Texto alinhado à esquerda */
+            justify-content: flex-start;
             background-color: #0056b3;
             color: white;
             padding: 18px 25px;
@@ -51,6 +59,7 @@
             font-size: 1.1rem;
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            -webkit-tap-highlight-color: transparent; /* Remove flash de toque no mobile */
         }
 
         .menu-link:hover {
@@ -59,10 +68,14 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
+        .menu-link:active {
+            transform: scale(0.98);
+        }
+
         .menu-link i {
-            margin-right: 15px; /* Espaço entre ícone e texto */
+            margin-right: 15px;
             font-size: 1.3rem;
-            width: 25px; /* Largura fixa para alinhar os ícones */
+            width: 25px;
             text-align: center;
         }
 
@@ -102,6 +115,17 @@
             (C) 2025 by Aguinaldo Liesack Baptistini
         </footer>
     </div>
+
+    <!-- Script para Registrar o PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registrado!', reg))
+            .catch(err => console.log('Erro ao registrar Service Worker:', err));
+        });
+      }
+    </script>
 
 </body>
 </html>
